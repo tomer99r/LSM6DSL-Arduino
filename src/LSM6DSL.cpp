@@ -19,6 +19,7 @@ lsm6dsl_status_t LSM6DSLCore::beginCore() {
 
     if (opMode == LSM6DSL_MODE_I2C) {
         Wire.begin();
+        Wire.setClock(400000);
     } else if (opMode == LSM6DSL_MODE_SPI) {
         SPI.begin();
         SPI.setClockDivider(SPI_CLOCK_DIV4);
