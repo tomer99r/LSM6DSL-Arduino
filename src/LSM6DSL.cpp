@@ -198,14 +198,14 @@ LSM6DSL::LSM6DSL(lsm6dsl_mode_t mode, uint8_t arg):
 void LSM6DSL::initSettings() {
     settings.gyroEnabled = 1;
     settings.gyroRange = 2000;
-    settings.gyroSampleRate = 416;
+    settings.gyroSampleRate = 104;
     settings.gyroFifoEnabled = 1;
     settings.gyroFifoDecimation = 1;
 
     settings.accelEnabled = 1;
     settings.accelODROff = 1;
     settings.accelRange = 16;
-    settings.accelSampleRate = 416;
+    settings.accelSampleRate = 104;
     settings.accelBandWidth = 100;
     settings.accelFifoEnabled = 1;
     settings.accelFifoDecimation = 1;
