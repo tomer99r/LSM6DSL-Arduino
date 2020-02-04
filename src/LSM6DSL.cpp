@@ -7,7 +7,9 @@ LSM6DSLCore::LSM6DSLCore(uint8_t addr):
 
 LSM6DSLCore::LSM6DSLCore(lsm6dsl_mode_t operationMode, uint8_t arg) {
     this->opMode = operationMode;
-    if (operationMode == LSM6DSL_MODE_I2C) {
+    if (operationMode == LSM6DSL_MODE_I2C_NON_BLOCK) {
+        this->i2cAddress = arg;
+    } else if (operationMode == LSM6DSL_MODE_I2C) {
         this->i2cAddress = arg;
     } else if (operationMode == LSM6DSL_MODE_SPI) {
         this->slaveSelect = arg;
@@ -17,9 +19,15 @@ LSM6DSLCore::LSM6DSLCore(lsm6dsl_mode_t operationMode, uint8_t arg) {
 lsm6dsl_status_t LSM6DSLCore::beginCore() {
     lsm6dsl_status_t returnStatus = IMU_SUCCESS;
 
+#ifdef NONBLOCKING_I2C
+    if (opMode == LSM6DSL_MODE_I2C_NON_BLOCK) {
+        g_i2c_handle = nI2C->RegisterDevice(i2cAddress, 1, CI2C::Speed::FAST);
+        nI2C->SetTimeoutMS(1000);
+#else
     if (opMode == LSM6DSL_MODE_I2C) {
         Wire.begin();
         Wire.setClock(400000);
+#endif
     } else if (opMode == LSM6DSL_MODE_SPI) {
         SPI.begin();
         SPI.setClockDivider(SPI_CLOCK_DIV4);
@@ -47,6 +55,12 @@ lsm6dsl_status_t LSM6DSLCore::readRegister(uint8_t* output, uint8_t offset) {
     uint8_t numBytes = 1;
     lsm6dsl_status_t returnStatus = IMU_SUCCESS;
 
+#ifdef NONBLOCKING_I2C
+    if (opMode == LSM6DSL_MODE_I2C_NON_BLOCK) {
+       uint8_t status = nI2C->Read(g_i2c_handle, offset, &result, numBytes);
+       if (status) returnStatus = IMU_HW_ERROR;
+
+#else
     if (opMode == LSM6DSL_MODE_I2C) {
         Wire.beginTransmission(i2cAddress);
         Wire.write(offset);
@@ -59,6 +73,7 @@ lsm6dsl_status_t LSM6DSLCore::readRegister(uint8_t* output, uint8_t offset) {
         while (Wire.available()) {
             result = Wire.read();
         }
+#endif
     } else if (opMode == LSM6DSL_MODE_SPI) {
         digitalWrite(slaveSelect, LOW);
         SPI.transfer(offset | 0x80);
@@ -82,6 +97,11 @@ lsm6dsl_status_t LSM6DSLCore::readRegisterRegion(uint8_t* output, uint8_t offset
     uint8_t c = 0;
     uint8_t allOnesCounter = 0;
 
+#ifdef NONBLOCKING_I2C
+    if (opMode == LSM6DSL_MODE_I2C_NON_BLOCK) {
+        uint8_t status = nI2C->Read(g_i2c_handle, offset, output, length);
+        if (status) returnStatus = IMU_HW_ERROR;
+#else
     if (opMode == LSM6DSL_MODE_I2C) {
         Wire.beginTransmission(i2cAddress);
         Wire.write(offset);
@@ -96,6 +116,7 @@ lsm6dsl_status_t LSM6DSLCore::readRegisterRegion(uint8_t* output, uint8_t offset
                 i++;
             }
         }
+#endif
     } else if (opMode == LSM6DSL_MODE_SPI) {
         digitalWrite(slaveSelect, LOW);
 
@@ -132,6 +153,7 @@ lsm6dsl_status_t LSM6DSLCore::readRegisterInt16(int16_t* output, uint8_t offsetL
     lsm6dsl_status_t returnStatus = IMU_SUCCESS;
     uint8_t nBytes = 2;
 
+#ifndef NONBLOCKING_I2C
     Wire.beginTransmission(i2cAddress);
     Wire.write(offsetM);
     Wire.write(offsetL);
@@ -149,12 +171,19 @@ lsm6dsl_status_t LSM6DSLCore::readRegisterInt16(int16_t* output, uint8_t offsetL
     }
 
     *output = out;
+#endif
     return returnStatus;
 }
 
 lsm6dsl_status_t LSM6DSLCore::writeRegister(uint8_t offset, uint8_t data) {
     lsm6dsl_status_t returnStatus = IMU_SUCCESS;
+    uint8_t byteNum = 1;
 
+#ifdef NONBLOCKING_I2C
+    if (opMode == LSM6DSL_MODE_I2C_NON_BLOCK) {
+        uint8_t status = nI2C->Write(g_i2c_handle, offset, &data, byteNum);
+        if (status) returnStatus = IMU_HW_ERROR;
+#else
     if (opMode == LSM6DSL_MODE_I2C) {
         Wire.beginTransmission(i2cAddress);
         Wire.write(offset);
@@ -162,6 +191,7 @@ lsm6dsl_status_t LSM6DSLCore::writeRegister(uint8_t offset, uint8_t data) {
         if (Wire.endTransmission() != 0) {
             returnStatus = IMU_HW_ERROR;
         }
+#endif
     } else if (opMode == LSM6DSL_MODE_SPI) {
         digitalWrite(slaveSelect, LOW);
 

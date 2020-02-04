@@ -1,10 +1,13 @@
 #ifndef LSM6DSL_LIBRARY_H
 #define LSM6DSL_LIBRARY_H
 
-#include <Wire.h>
 #include <SPI.h>
+//#include <Wire.h>
 #include <stdint.h>
 #include "LSM6DSL_Constants.h"
+#include "../../nI2C/nI2C.h"
+
+#define NONBLOCKING_I2C 1
 
 /**
  * LSM6DSL operation mode enum
@@ -12,7 +15,8 @@
  */
 typedef enum {
     LSM6DSL_MODE_I2C,
-    LSM6DSL_MODE_SPI
+    LSM6DSL_MODE_SPI,
+    LSM6DSL_MODE_I2C_NON_BLOCK
 } lsm6dsl_mode_t;
 
 /**
@@ -43,6 +47,7 @@ public:
     lsm6dsl_status_t basePage();
 
 private:
+    CI2C::Handle g_i2c_handle;
     lsm6dsl_mode_t opMode;
     uint8_t i2cAddress;
     uint8_t slaveSelect;
