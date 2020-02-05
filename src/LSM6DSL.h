@@ -1,7 +1,8 @@
 #ifndef LSM6DSL_LIBRARY_H
 #define LSM6DSL_LIBRARY_H
 
-#include <Wire.h>
+//#include <Wire.h>
+#include "../../Wire/src/Wire.h"
 #include <SPI.h>
 #include <stdint.h>
 #include "LSM6DSL_Constants.h"
@@ -10,6 +11,8 @@
  * LSM6DSL operation mode enum
  *
  */
+#define TIMEOUT_DEFAULT 500000 //define I2C default timeout in µSeconds
+
 typedef enum {
     LSM6DSL_MODE_I2C,
     LSM6DSL_MODE_SPI
@@ -29,7 +32,7 @@ typedef enum {
 
 class LSM6DSLCore {
 public:
-    LSM6DSLCore(lsm6dsl_mode_t operationMode, uint8_t arg);
+    LSM6DSLCore(lsm6dsl_mode_t operationMode, uint8_t arg, uint32_t timeout = TIMEOUT_DEFAULT);
     LSM6DSLCore(uint8_t addr);
     ~LSM6DSLCore() = default;
 
@@ -46,6 +49,7 @@ private:
     lsm6dsl_mode_t opMode;
     uint8_t i2cAddress;
     uint8_t slaveSelect;
+    uint32_t timeoutMicros;
 };
 
 struct SensorSettings {

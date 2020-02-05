@@ -3,10 +3,12 @@
 
 LSM6DSLCore::LSM6DSLCore(uint8_t addr):
  opMode(LSM6DSL_MODE_I2C),
+ timeoutMicros(TIMEOUT_DEFAULT),
  i2cAddress(addr) {}
 
-LSM6DSLCore::LSM6DSLCore(lsm6dsl_mode_t operationMode, uint8_t arg) {
+LSM6DSLCore::LSM6DSLCore(lsm6dsl_mode_t operationMode, uint8_t arg ,uint32_t timeout) {
     this->opMode = operationMode;
+    this->timeoutMicros = timeout;
     if (operationMode == LSM6DSL_MODE_I2C) {
         this->i2cAddress = arg;
     } else if (operationMode == LSM6DSL_MODE_SPI) {
@@ -20,6 +22,7 @@ lsm6dsl_status_t LSM6DSLCore::beginCore() {
     if (opMode == LSM6DSL_MODE_I2C) {
         Wire.begin();
         Wire.setClock(400000);
+        Wire.setTimeoutInMicros(timeoutMicros);
     } else if (opMode == LSM6DSL_MODE_SPI) {
         SPI.begin();
         SPI.setClockDivider(SPI_CLOCK_DIV4);
@@ -55,7 +58,10 @@ lsm6dsl_status_t LSM6DSLCore::readRegister(uint8_t* output, uint8_t offset) {
             returnStatus = IMU_HW_ERROR;
         }
 
-        Wire.requestFrom(i2cAddress, numBytes);
+        if (Wire.requestFrom(i2cAddress, numBytes) == 0) {
+            returnStatus = IMU_HW_ERROR;
+        }
+
         while (Wire.available()) {
             result = Wire.read();
         }
@@ -88,7 +94,9 @@ lsm6dsl_status_t LSM6DSLCore::readRegisterRegion(uint8_t* output, uint8_t offset
         if (Wire.endTransmission() != 0) {
             returnStatus = IMU_HW_ERROR;
         } else {
-            Wire.requestFrom(i2cAddress, length);
+            if (Wire.requestFrom(i2cAddress, length) == 0) {
+                returnStatus = IMU_HW_ERROR;
+            }
             while (Wire.available() && (i < length)) {
                 c = Wire.read();
                 *output = c;
