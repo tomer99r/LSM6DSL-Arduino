@@ -11,7 +11,7 @@
  * LSM6DSL operation mode enum
  *
  */
-#define TIMEOUT_DEFAULT 500000 //define I2C default timeout in µSeconds
+#define TIMEOUT_DEFAULT 2000 //define I2C default timeout in µSeconds
 
 typedef enum {
     LSM6DSL_MODE_I2C,
